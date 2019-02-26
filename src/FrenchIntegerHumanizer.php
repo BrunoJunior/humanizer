@@ -95,9 +95,9 @@ class FrenchIntegerHumanizer implements IHumanizer
         if ($number < 100) {
             return $this->humanizeUnder100($number);
         }
-        $firstDigitHumanized = $this->humanizeFirstDigit($number);
-        $numberWithoutFirstDigit = intval(substr(strval($number), 1), 10);
-        return $firstDigitHumanized . ' ' . $this->humanizeUnsigned($numberWithoutFirstDigit);
+        $humanized = $this->humanizeFirstsDigit($number, $removed);
+        $numberWithoutFirstDigit = intval(substr(strval($number), $removed), 10);
+        return rtrim($humanized . ' ' . $this->humanizeUnsigned($numberWithoutFirstDigit));
     }
 
     /**
@@ -132,14 +132,24 @@ class FrenchIntegerHumanizer implements IHumanizer
     /**
      * Getting special part (cent, mille, million, milliard) depending on number of digits
      * @param int $number
+     * @param int $removed
      * @return string
      * @throws WrongTypeException
      */
-    private function humanizeFirstDigit(int $number): string
+    private function humanizeFirstsDigit(int $number, &$removed): string
     {
         $strNum = strval($number);
         $nbDigits = strlen($strNum);
-        $firstDigit = intval($strNum[0], 10);
+        $removed = 1;
+        if ($nbDigits > 2 && ($nbDigits - 2) % 3 === 0) {
+            $removed = 2;
+        } elseif ($nbDigits >= 6 && ($nbDigits - 6) % 3 === 0) {
+            $removed = 3;
+        } elseif ($nbDigits >= 13 && ($nbDigits - 13) % 3 === 0) {
+            $removed = 4;
+        }
+        $nbDigits = $nbDigits - $removed + 1;
+        $firstDigit = intval(substr($strNum, 0, $removed), 10);
         $humanized = $this->humanizeUnsigned($firstDigit);
         if ($nbDigits > 2) {
             foreach (static::$specialParts as $key => $infos) {
