@@ -25,6 +25,6 @@
   },
   "scripts": {
     "test": "atoum -c .atoum.php -d tests/units",
-    "coverage": "codacycoverage clover"
+    "coverage": "codacycoverage clover build/coverage/xml"
   }
 }
