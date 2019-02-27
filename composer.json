@@ -1,7 +1,7 @@
 {
   "name": "bdesprez/humanizer",
   "description": "Transform data for human reading",
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "license": "MIT",
   "authors": [
     {
