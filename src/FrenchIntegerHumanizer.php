@@ -96,8 +96,8 @@ class FrenchIntegerHumanizer implements IHumanizer
             return $this->humanizeUnder100($number);
         }
         $humanized = $this->humanizeFirstsDigit($number, $removed);
-        $numberWithoutFirstDigit = intval(substr(strval($number), $removed), 10);
-        return rtrim($humanized . ' ' . $this->humanizeUnsigned($numberWithoutFirstDigit));
+        $nbWithoutFirstDigit = (int) substr((string) $number, $removed);
+        return rtrim($humanized . ' ' . $this->humanizeUnsigned($nbWithoutFirstDigit));
     }
 
     /**
@@ -138,7 +138,7 @@ class FrenchIntegerHumanizer implements IHumanizer
      */
     private function humanizeFirstsDigit(int $number, &$removed): string
     {
-        $strNum = strval($number);
+        $strNum = (string) $number;
         $nbDigits = strlen($strNum);
         $removed = 1;
         if ($nbDigits > 2 && ($nbDigits - 2) % 3 === 0) {
@@ -149,7 +149,7 @@ class FrenchIntegerHumanizer implements IHumanizer
             $removed = 4;
         }
         $nbDigits = $nbDigits - $removed + 1;
-        $firstDigit = intval(substr($strNum, 0, $removed), 10);
+        $firstDigit = (int) substr($strNum, 0, $removed);
         $humanized = $this->humanizeUnsigned($firstDigit);
         if ($nbDigits > 2) {
             foreach (static::$specialParts as $key => $infos) {
