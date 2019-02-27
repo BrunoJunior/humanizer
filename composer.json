@@ -22,6 +22,6 @@
     "atoum/stubs": "2.6.0"
   },
   "scripts": {
-    "test": "./vendor/bin/atoum -d tests/units"
+    "test": "atoum -d tests/units"
   }
 }
