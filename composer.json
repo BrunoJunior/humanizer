@@ -24,6 +24,7 @@
     "codacy/coverage": "dev-master"
   },
   "scripts": {
-    "test": "atoum -c .atoum.php -d tests/units"
+    "test": "atoum -c .atoum.php -d tests/units",
+    "coverage": "codacycoverage clover"
   }
 }
