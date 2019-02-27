@@ -20,7 +20,8 @@
   "require-dev": {
     "atoum/atoum": "3.3.0",
     "atoum/stubs": "2.6.0",
-    "atoum/reports-extension": "^3.0"
+    "atoum/reports-extension": "^3.0",
+    "codacy/coverage": "dev-master"
   },
   "scripts": {
     "test": "atoum -c .atoum.php -d tests/units"
