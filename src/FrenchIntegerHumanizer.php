@@ -24,7 +24,10 @@ class FrenchIntegerHumanizer implements IHumanizer
         2 => 'vingt', 3 => 'trente', 4 => 'quarante', 5 => 'cinquante', 6 => 'soixante', 8 => 'quatre-vingt'
     ];
 
-    private static $specialParts;
+    /**
+     * @var FrenchCardinalNumber[]
+     */
+    private $cardinals;
 
     /**
      * FrenchIntegerHumanizer constructor.
@@ -32,30 +35,12 @@ class FrenchIntegerHumanizer implements IHumanizer
      */
     public function __construct()
     {
-        if (!isset(static::$specialParts)) {
-            static::$specialParts = [
-                'cent' => [
-                    'invariable' => false,
-                    'printOne' => false,
-                    'isValid' => function ($nbDigits) {return $nbDigits % 3 === 0;}
-                    ],
-                'mille' => [
-                    'invariable' => true,
-                    'printOne' => false,
-                    'isValid' => function ($nbDigits) {return ($nbDigits - 4) % 9 === 0;}
-                ],
-                'million' => [
-                    'invariable' => false,
-                    'printOne' => true,
-                    'isValid' => function ($nbDigits) {return ($nbDigits - 7) % 9 === 0;}
-                ],
-                'milliard' => [
-                    'invariable' => false,
-                    'printOne' => true,
-                    'isValid' => function ($nbDigits) {return ($nbDigits - 10) % 9 === 0;}
-                ]
-            ];
-        }
+        $this->cardinals = [
+            new FrenchCardinalNumber('cent', 3, 0, false),
+            new FrenchCardinalNumber('mille', 9, 4, false, true),
+            new FrenchCardinalNumber('million', 9, 7),
+            new FrenchCardinalNumber('milliard', 9, 10)
+        ];
     }
 
     /**
@@ -93,11 +78,23 @@ class FrenchIntegerHumanizer implements IHumanizer
         }
         $humanizedFirsts = $this->humanizeFirstsDigit($number, $removed);
         $humanizedRest = $this->humanizeUnsigned((int) substr((string) $number, $removed));
-        //@see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/cent-ou-cents/
-        if (substr($humanizedFirsts, -5) === 'cents' && substr($humanizedRest, 0, 4) !== 'mill' && !empty($humanizedRest)) {
-            $humanizedFirsts = substr($humanizedFirsts, 0, -1);
+        $humanizedRuled = $this->applyPluralRules($humanizedFirsts, $humanizedRest);
+        return $humanizedRuled . ($humanizedRest ? ' ' : '') . $humanizedRest;
+    }
+
+    /**
+     * French grammar for plural rules
+     * @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/cent-ou-cents/
+     * @param string $start
+     * @param string $end
+     * @return string
+     */
+    private function applyPluralRules(string $start, string $end): string
+    {
+        if (substr($start, -5) === 'cents' && substr($end, 0, 4) !== 'mill' && !empty($end)) {
+            return substr($start, 0, -1);
         }
-        return $humanizedFirsts . (empty($humanizedRest) ? '' : ' ') . $humanizedRest;
+        return $start;
     }
 
     /**
@@ -125,6 +122,9 @@ class FrenchIntegerHumanizer implements IHumanizer
             $humanized .= ' et ';
         } elseif ($unity > 0) {
             $humanized .= '-';
+        } elseif ($decade === 8) {
+            // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
+            $humanized .= 's';
         }
         return $humanized . $this->humanizeUnsigned($unity);
     }
@@ -152,20 +152,8 @@ class FrenchIntegerHumanizer implements IHumanizer
         $firstDigit = (int) substr($strNum, 0, $removed);
         $humanized = $this->humanizeUnsigned($firstDigit);
         if ($nbDigits > 2) {
-            foreach (static::$specialParts as $key => $infos) {
-                if (!$infos['isValid']($nbDigits)) {
-                    continue;
-                }
-                $specialPart = $key;
-                if ($firstDigit === 1 && !$infos['printOne']) {
-                    $humanized = '';
-                } elseif ($firstDigit > 1 && !$infos['invariable']) {
-                    $specialPart .= 's';
-                }
-                if (!empty($humanized)) {
-                    $humanized .= ' ';
-                }
-                $humanized .= $specialPart;
+            foreach ($this->cardinals as $cardinal) {
+                $humanized = $cardinal->apply($nbDigits, $firstDigit, $humanized);
             }
         }
         return $humanized;

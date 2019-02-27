@@ -81,6 +81,30 @@ class FrenchIntegerHumanizer extends \atoum
         ;
     }
 
+    public function testPlurals() {
+        $this
+            ->if($this->newTestedInstance)
+            ->then
+                ->string($this->testedInstance->humanize(275))
+                    ->isIdenticalTo('deux cent soixante-quinze')
+            ->and
+                ->string($this->testedInstance->humanize(999))
+                    ->isIdenticalTo('neuf cent quatre-vingt-dix-neuf')
+            ->and
+                ->string($this->testedInstance->humanize(200))
+                    ->isIdenticalTo('deux cents')
+            ->and
+                ->string($this->testedInstance->humanize(80))
+                    ->isIdenticalTo('quatre-vingts')
+            ->and
+                ->string($this->testedInstance->humanize(80000))
+                    ->isIdenticalTo('quatre-vingts mille')
+            ->and
+                ->string($this->testedInstance->humanize(80000000))
+                    ->isIdenticalTo('quatre-vingts millions')
+        ;
+    }
+
 
     public function testSigned() {
         $this
