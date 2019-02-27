@@ -36,25 +36,21 @@ class FrenchIntegerHumanizer implements IHumanizer
             static::$specialParts = [
                 'cent' => [
                     'invariable' => false,
-                    'separator' => '-',
                     'printOne' => false,
                     'isValid' => function ($nbDigits) {return $nbDigits % 3 === 0;}
                     ],
                 'mille' => [
                     'invariable' => true,
-                    'separator' => '-',
                     'printOne' => false,
                     'isValid' => function ($nbDigits) {return ($nbDigits - 4) % 9 === 0;}
                 ],
                 'million' => [
                     'invariable' => false,
-                    'separator' => ' ',
                     'printOne' => true,
                     'isValid' => function ($nbDigits) {return ($nbDigits - 7) % 9 === 0;}
                 ],
                 'milliard' => [
                     'invariable' => false,
-                    'separator' => ' ',
                     'printOne' => true,
                     'isValid' => function ($nbDigits) {return ($nbDigits - 10) % 9 === 0;}
                 ]
@@ -95,9 +91,13 @@ class FrenchIntegerHumanizer implements IHumanizer
         if ($number < 100) {
             return $this->humanizeUnder100($number);
         }
-        $humanized = $this->humanizeFirstsDigit($number, $removed);
-        $nbWithoutFirstDigit = (int) substr((string) $number, $removed);
-        return rtrim($humanized . ' ' . $this->humanizeUnsigned($nbWithoutFirstDigit));
+        $humanizedFirsts = $this->humanizeFirstsDigit($number, $removed);
+        $humanizedRest = $this->humanizeUnsigned((int) substr((string) $number, $removed));
+        //@see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/cent-ou-cents/
+        if (substr($humanizedFirsts, -5) === 'cents' && substr($humanizedRest, 0, 4) !== 'mill' && !empty($humanizedRest)) {
+            $humanizedFirsts = substr($humanizedFirsts, 0, -1);
+        }
+        return $humanizedFirsts . (empty($humanizedRest) ? '' : ' ') . $humanizedRest;
     }
 
     /**
@@ -163,7 +163,7 @@ class FrenchIntegerHumanizer implements IHumanizer
                     $specialPart .= 's';
                 }
                 if (!empty($humanized)) {
-                    $humanized .= $infos['separator'];
+                    $humanized .= ' ';
                 }
                 $humanized .= $specialPart;
             }

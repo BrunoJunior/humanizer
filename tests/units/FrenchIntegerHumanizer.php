@@ -71,10 +71,13 @@ class FrenchIntegerHumanizer extends \atoum
                     ->isIdenticalTo('cent un')
             ->and
                 ->string($this->testedInstance->humanize(275))
-                    ->isIdenticalTo('deux-cents soixante-quinze')
+                    ->isIdenticalTo('deux cent soixante-quinze')
             ->and
                 ->string($this->testedInstance->humanize(999))
-                    ->isIdenticalTo('neuf-cents quatre-vingt-dix-neuf')
+                    ->isIdenticalTo('neuf cent quatre-vingt-dix-neuf')
+            ->and
+                ->string($this->testedInstance->humanize(200))
+                    ->isIdenticalTo('deux cents')
         ;
     }
 
@@ -84,7 +87,7 @@ class FrenchIntegerHumanizer extends \atoum
             ->if($this->newTestedInstance)
             ->then
                 ->string($this->testedInstance->humanize(-678))
-                    ->isIdenticalTo('moins six-cents soixante-dix-huit')
+                    ->isIdenticalTo('moins six cent soixante-dix-huit')
         ;
     }
 
@@ -93,7 +96,7 @@ class FrenchIntegerHumanizer extends \atoum
             ->if($this->newTestedInstance)
             ->then
                 ->string($this->testedInstance->humanize(65535))
-                    ->isIdenticalTo('soixante-cinq-mille cinq-cents trente-cinq')
+                    ->isIdenticalTo('soixante-cinq mille cinq cent trente-cinq')
             ->and
                 ->string($this->testedInstance->humanize(1000000))
                     ->isIdenticalTo('un million')
@@ -101,11 +104,14 @@ class FrenchIntegerHumanizer extends \atoum
                 ->string($this->testedInstance->humanize(1000))
                     ->isIdenticalTo('mille')
             ->and
+                ->string($this->testedInstance->humanize(200000000))
+                    ->isIdenticalTo('deux cents millions')
+            ->and
                 ->string($this->testedInstance->humanize(10000))
-                    ->isIdenticalTo('dix-mille')
+                    ->isIdenticalTo('dix mille')
             ->and
                 ->string($this->testedInstance->humanize(100000))
-                    ->isIdenticalTo('cent-mille')
+                    ->isIdenticalTo('cent mille')
             ->and
                 ->string($this->testedInstance->humanize(1000000000))
                     ->isIdenticalTo('un milliard')
@@ -120,7 +126,7 @@ class FrenchIntegerHumanizer extends \atoum
                     ->isIdenticalTo('mille vingt-quatre')
             ->and
                 ->string($this->testedInstance->humanize(86435666087))
-                    ->isIdenticalTo('quatre-vingt-six milliards quatre-cents trente-cinq millions six-cents soixante-six-mille quatre-vingt-sept')
+                    ->isIdenticalTo('quatre-vingt-six milliards quatre cent trente-cinq millions six cent soixante-six mille quatre-vingt-sept')
         ;
     }
 
