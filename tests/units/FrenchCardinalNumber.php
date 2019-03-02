@@ -15,12 +15,15 @@ namespace Humanizer\tests\units;
  */
 class FrenchCardinalNumber extends \atoum
 {
-    public function testInvalid() {
+    public function testValidity() {
         $this
             ->if($this->newTestedInstance('test', 3, 0))
             ->then
-                ->string($this->testedInstance->apply(1, 0, 'zéro'))
-                    ->isIdenticalTo('zéro')
+                ->boolean($this->testedInstance->isValid(1))
+                    ->isFalse
+            ->and
+                ->boolean($this->testedInstance->isValid(3))
+                    ->isTrue
             ;
     }
 
@@ -28,8 +31,8 @@ class FrenchCardinalNumber extends \atoum
         $this
             ->if($this->newTestedInstance('test', 3, 0))
             ->then
-            ->string($this->testedInstance->apply(3, 1, 'un'))
-            ->isIdenticalTo('un test')
+                ->string($this->testedInstance->apply(1, 'un'))
+                    ->isIdenticalTo('un test')
         ;
     }
 
@@ -37,8 +40,8 @@ class FrenchCardinalNumber extends \atoum
         $this
             ->if($this->newTestedInstance('test', 3, 0, false))
             ->then
-            ->string($this->testedInstance->apply(3, 1, 'un'))
-            ->isIdenticalTo('test')
+                ->string($this->testedInstance->apply(1, 'un'))
+                    ->isIdenticalTo('test')
         ;
     }
 
@@ -46,8 +49,8 @@ class FrenchCardinalNumber extends \atoum
         $this
             ->if($this->newTestedInstance('test', 3, 0, true, true))
             ->then
-            ->string($this->testedInstance->apply(3, 2, 'deux'))
-            ->isIdenticalTo('deux test')
+                ->string($this->testedInstance->apply(2, 'deux'))
+                    ->isIdenticalTo('deux test')
         ;
     }
 
@@ -55,8 +58,8 @@ class FrenchCardinalNumber extends \atoum
         $this
             ->if($this->newTestedInstance('test', 3, 0, true, false))
             ->then
-            ->string($this->testedInstance->apply(3, 2, 'deux'))
-            ->isIdenticalTo('deux tests')
+                ->string($this->testedInstance->apply(2, 'deux'))
+                    ->isIdenticalTo('deux tests')
         ;
     }
 }

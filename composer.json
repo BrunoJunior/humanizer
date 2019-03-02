@@ -10,9 +10,10 @@
     }
   ],
   "autoload": {
-    "psr-4": {
-      "Humanizer\\": "src/"
-    }
+    "psr-4": { "Humanizer\\": "src/" }
+  },
+  "autoload-dev": {
+    "psr-4": { "Humanizer\\Tests\\": "tests/" }
   },
   "require": {
     "php": "^7.2"

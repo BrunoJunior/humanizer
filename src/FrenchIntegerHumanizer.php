@@ -8,6 +8,8 @@
 
 namespace Humanizer;
 
+use Humanizer\tools\StringConcat;
+
 /**
  * Class FrenchIntegerHumanizer
  * Humanize integer to french
@@ -30,13 +32,25 @@ class FrenchIntegerHumanizer implements IHumanizer
     private $cardinals;
 
     /**
+     * @var int
+     */
+    private $number;
+
+    /**
+     * @var StringConcat
+     */
+    private $output;
+
+    /**
      * FrenchIntegerHumanizer constructor.
      * Init specialParts array
+     * @param int $number
      */
-    public function __construct()
+    public function __construct(int $number)
     {
+        $this->number = $number;
+        $this->output = new StringConcat('');
         $this->cardinals = [
-            new FrenchCardinalNumber('cent', 3, 0, false),
             new FrenchCardinalNumber('mille', 9, 4, false, true),
             new FrenchCardinalNumber('million', 9, 7),
             new FrenchCardinalNumber('milliard', 9, 10)
@@ -45,100 +59,98 @@ class FrenchIntegerHumanizer implements IHumanizer
 
     /**
      * Humanize integer to french string
-     * @param int $data
      * @return string
-     * @throws WrongTypeException
      */
-    public function humanize($data): string
+    public function humanize(): string
     {
-        if (!is_int($data)) {
-            throw new WrongTypeException("Data must be an integer!");
-        }
-        if ($data === 0) {
+        if ($this->number === 0) {
             return 'zéro';
         }
-        $start = '';
-        if ($data < 0) {
-            $start = 'moins ';
-            $data = -$data;
+        if ($this->number < 0) {
+            $this->output->concat('moins')->addSpace();
+            $this->number = -$this->number;
         }
-        return $start . $this->humanizeUnsigned($data);
+        $this->humanizeUnsigned();
+        return trim($this->output);
     }
 
     /**
      * Humanize unsigned integer to french string
-     * @param int $number
-     * @return string
-     * @throws WrongTypeException
-     */
-    private function humanizeUnsigned(int $number): string
-    {
-        if ($number < 100) {
-            return $this->humanizeUnder100($number);
-        }
-        $humanizedFirsts = $this->humanizeFirstsDigit($number, $removed);
-        $humanizedRest = $this->humanizeUnsigned((int) substr((string) $number, $removed));
-        $humanizedRuled = $this->applyPluralRules($humanizedFirsts, $humanizedRest);
-        return $humanizedRuled . ($humanizedRest ? ' ' : '') . $humanizedRest;
-    }
-
-    /**
-     * French grammar for plural rules
-     * @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/cent-ou-cents/
-     * @param string $start
-     * @param string $end
      * @return string
      */
-    private function applyPluralRules(string $start, string $end): string
+    private function humanizeUnsigned()
     {
-        if (substr($start, -5) === 'cents' && substr($end, 0, 4) !== 'mill' && !empty($end)) {
-            return substr($start, 0, -1);
+        if ($this->number < 1000) {
+            $this->humanizeUnder1000();
+            return;
         }
-        return $start;
+        $this->humanizeFirstsDigit();
     }
 
     /**
      * Humanize number between 0 and 100 (non inclusive)
-     * @param int $number
      * @return string
-     * @throws WrongTypeException
      */
-    private function humanizeUnder100(int $number): string
+    private function humanizeUnder100()
     {
-        if ($number < 17) {
-            return static::UNDER_17[$number];
+        if ($this->number < 17) {
+            $this->output->concat(static::UNDER_17[$this->number]);
+            return;
         }
-        if ($number < 20) {
-            return 'dix-' . $this->humanizeUnsigned($number - 10);
+        if ($this->number < 20) {
+            $this->output->concat(static::UNDER_17[10])->addSeparator();
+            $this->number -= 10;
+        } else {
+            $decade = intdiv($this->number, 10);
+            $this->number = $this->number % 10;
+            if ($decade === 7 || $decade === 9) {
+                $this->number += 10;
+                $decade -= 1;
+            }
+            $this->output->concat(static::DECADES[$decade]);
+            if ($decade < 8 && ($this->number === 1 || $this->number === 11)) {
+                $this->output->concat(' et ');
+            } elseif ($this->number > 0) {
+                $this->output->addSeparator();
+            } elseif ($decade === 8) {
+                // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
+                $this->output->pluralize();
+            }
         }
-        $decade = intdiv($number, 10);
-        $unity = $number % 10;
-        if ($decade === 7 || $decade === 9) {
-            $unity += 10;
-            $decade -= 1;
+        $this->humanizeUnsigned();
+    }
+
+    /**
+     * Humanize number between 0 and 1000 (non inclusive)
+     */
+    private function humanizeUnder1000()
+    {
+        if ($this->number > 99) {
+            $hundreds = intdiv($this->number, 100);
+            $rest = $this->number % 100;
+            $this->number = $hundreds;
+            if ($hundreds > 1) {
+                $this->humanizeUnsigned();
+                $this->output->addSpace();
+            }
+            $this->output->concat('cent');
+            $this->number = $rest;
+            if ($this->number === 0 && $hundreds > 1) {
+                $this->output->pluralize();
+            }
+            if ($this->number > 0) {
+                $this->output->addSpace();
+            }
         }
-        $humanized = static::DECADES[$decade];
-        if ($decade < 8 && ($unity === 1 || $unity === 11)) {
-            $humanized .= ' et ';
-        } elseif ($unity > 0) {
-            $humanized .= '-';
-        } elseif ($decade === 8) {
-            // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
-            $humanized .= 's';
-        }
-        return $humanized . $this->humanizeUnsigned($unity);
+        $this->humanizeUnder100();
     }
 
     /**
      * Getting special part (cent, mille, million, milliard) depending on number of digits
-     * @param int $number
-     * @param int $removed
-     * @return string
-     * @throws WrongTypeException
      */
-    private function humanizeFirstsDigit(int $number, &$removed): string
+    private function humanizeFirstsDigit()
     {
-        $strNum = (string) $number;
+        $strNum = (string) $this->number;
         $nbDigits = strlen($strNum);
         $removed = 1;
         if ($nbDigits > 2 && ($nbDigits - 2) % 3 === 0) {
@@ -150,12 +162,17 @@ class FrenchIntegerHumanizer implements IHumanizer
         }
         $nbDigits = $nbDigits - $removed + 1;
         $firstDigit = (int) substr($strNum, 0, $removed);
-        $humanized = $this->humanizeUnsigned($firstDigit);
+        $this->number = (int) substr($strNum, $removed);
+        $humanized = (new FrenchIntegerHumanizer($firstDigit))->humanize();
         if ($nbDigits > 2) {
             foreach ($this->cardinals as $cardinal) {
-                $humanized = $cardinal->apply($nbDigits, $firstDigit, $humanized);
+                if ($cardinal->isValid($nbDigits)) {
+                    $humanized = $cardinal->apply($firstDigit, $humanized);
+                    break;
+                }
             }
         }
-        return $humanized;
+        $this->output->concat($humanized)->addSpace();
+        $this->humanizeUnsigned();
     }
 }

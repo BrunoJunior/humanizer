@@ -57,23 +57,19 @@ class FrenchCardinalNumber
      * @param int $nbDigits
      * @return bool
      */
-    private function isValid(int $nbDigits): bool
+    public function isValid(int $nbDigits): bool
     {
         return ($nbDigits - $this->offset) % $this->modulo === 0;
     }
 
     /**
-     * Apply the cardinal if valid
-     * @param int $nbDigits
+     * Apply the cardinal
      * @param int $firstDigit
      * @param string $humanizedInt
      * @return string
      */
-    public function apply(int $nbDigits, int $firstDigit, string $humanizedInt): string
+    public function apply(int $firstDigit, string $humanizedInt): string
     {
-        if (!$this->isValid($nbDigits)) {
-            return $humanizedInt;
-        }
         $humanized = $humanizedInt;
         $specialPart = $this->name;
         if ($firstDigit === 1 && !$this->printOnes) {

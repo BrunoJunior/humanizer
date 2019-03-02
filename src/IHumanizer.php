@@ -8,8 +8,7 @@
 
 namespace Humanizer;
 
-
 interface IHumanizer
 {
-    public function humanize($data): string;
+    public function humanize(): string;
 }
