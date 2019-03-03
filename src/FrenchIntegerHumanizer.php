@@ -75,23 +75,22 @@ class FrenchIntegerHumanizer implements IHumanizer
         $bloc = $this->number % 1000;
         // The rest to humanize
         $this->number = intdiv($this->number, 1000);
-        $step = $this->nbThousands > 0 ? (($this->nbThousands -1) % 3) + 1 : 0;
         // If the bloc's value is 0 we don't have to write anything
+        $step = $this->nbThousands > 0 ? (($this->nbThousands -1) % 3) + 1 : 0;
+        // The "milliard" bloc is printed even if it's equal to 0
         if ($bloc > 0 || $step === 3) {
             // Getting the step's bloc ("mille", "million", "milliard" ...)
             $blocStep = new Stringer(static::THOUSANDS[$step]);
-            if ($bloc > 1 && $step > 1) {
+            if (($bloc > 1 && $step > 1) || ($step === 3 && $bloc !== 1)) {
                 // Pluralize the step if it's more than 1 and it's not mille
                 $blocStep->pluralize();
+            } elseif ($bloc === 1 && $step === 1) {
+                $bloc = 0;
             }
-            $this->output
-                ->prefix(Stringer::SPACE)
-                ->prefix($blocStep);
-            if ($bloc > 1 || $step !== 1) {
-                $this->output
-                    ->prefix(Stringer::SPACE)
-                    ->prefix((new FrIntBlocHumanizer($bloc))->humanize());
-            }
+            $humanizedBloc = (new Stringer((new FrIntBlocHumanizer($bloc))->humanize()))
+                ->concatWithPrefix($blocStep, $bloc === 0 ? Stringer::EMPTY : Stringer::SPACE)
+                ->addSpace();
+            $this->output->prefix($humanizedBloc);
         }
         $this->nbThousands++;
         // Do it again ...

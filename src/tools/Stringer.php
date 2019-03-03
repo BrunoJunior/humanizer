@@ -37,10 +37,10 @@ class Stringer
      */
     public function concat(string $string, bool $ifEmpty = true): self
     {
-        if ($ifEmpty && empty($this)) {
-            return $this;
+        if ($ifEmpty || !$this->isEmpty()) {
+            $this->concatWithPrefix($string, static::EMPTY);
         }
-        return $this->concatWithPrefix($string, static::EMPTY);
+        return $this;
     }
 
     /**
@@ -50,7 +50,7 @@ class Stringer
      */
     public function prefix(string $string, bool $ifEmpty = true): self
     {
-        if (!$ifEmpty || !empty($this)) {
+        if ($ifEmpty || !$this->isEmpty()) {
             $this->string = $string . $this;
         }
         return $this;
@@ -81,7 +81,7 @@ class Stringer
      */
     public function concatWithPrefix(string $string, string $prefix = self::SPACE): self
     {
-        if (!empty($string)) {
+        if ($string !== static::EMPTY) {
             $this->string = $this . $prefix . $string;
         }
         return $this;
@@ -94,6 +94,14 @@ class Stringer
     public function pluralize(bool $ifEmpty = true): self
     {
         return $this->concat(static::PLURAL, $ifEmpty);
+    }
+
+    /**
+     * @return bool
+     */
+    public function isEmpty(): bool
+    {
+        return $this->string === static::EMPTY;
     }
 
     /**
