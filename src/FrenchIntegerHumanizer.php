@@ -9,7 +9,7 @@
 namespace Humanizer;
 
 use Humanizer\tools\FrIntBlocHumanizer;
-use Humanizer\tools\Stringer;
+use Stringer\Stringer;
 
 /**
  * Class FrenchIntegerHumanizer
@@ -61,7 +61,7 @@ class FrenchIntegerHumanizer implements IHumanizer
         }
         $this->humanizeBlocs();
         if ($isNegative) {
-            $this->output->prefix('moins ');
+            $this->output->prepend('moins ');
         }
         return trim($this->output);
     }
@@ -88,9 +88,9 @@ class FrenchIntegerHumanizer implements IHumanizer
                 $bloc = 0;
             }
             $humanizedBloc = (new Stringer((new FrIntBlocHumanizer($bloc))->humanize()))
-                ->concatWithPrefix($blocStep, $bloc === 0 ? Stringer::EMPTY : Stringer::SPACE)
-                ->addSpace();
-            $this->output->prefix($humanizedBloc);
+                ->appendWithPrefix($blocStep, $bloc === 0 ? Stringer::EMPTY : Stringer::SPACE)
+                ->appendSpace();
+            $this->output->prepend($humanizedBloc);
         }
         $this->nbThousands++;
         // Do it again ...

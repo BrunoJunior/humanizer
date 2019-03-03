@@ -4,8 +4,51 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1ed884d1661d48cf8614a2dfd274b771",
-    "packages": [],
+    "content-hash": "19029a189119bab2957edc122325e463",
+    "packages": [
+        {
+            "name": "bdesprez/stringer",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/BrunoJunior/Stringer.git",
+                "reference": "ab28cefdda4c39bf52637f7979d17eb98605c056"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/BrunoJunior/Stringer/zipball/ab28cefdda4c39bf52637f7979d17eb98605c056",
+                "reference": "ab28cefdda4c39bf52637f7979d17eb98605c056",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.0"
+            },
+            "require-dev": {
+                "atoum/atoum": "3.3.0",
+                "atoum/reports-extension": "^3.0",
+                "atoum/stubs": "2.6.0",
+                "codacy/coverage": "dev-master"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Stringer\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Bruno Desprez",
+                    "email": "bruno.desprez@gmail.com"
+                }
+            ],
+            "description": "Strings manipulation tool",
+            "time": "2019-03-03T21:28:14+00:00"
+        }
+    ],
     "packages-dev": [
         {
             "name": "atoum/atoum",
@@ -724,7 +767,7 @@
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
-        "php": "^7.2"
+        "php": "^7.0"
     },
     "platform-dev": []
 }
