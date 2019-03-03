@@ -8,7 +8,8 @@
 
 namespace Humanizer;
 
-use Humanizer\tools\StringConcat;
+use Humanizer\tools\FrIntBlocHumanizer;
+use Humanizer\tools\Stringer;
 
 /**
  * Class FrenchIntegerHumanizer
@@ -17,19 +18,7 @@ use Humanizer\tools\StringConcat;
  */
 class FrenchIntegerHumanizer implements IHumanizer
 {
-    const UNDER_17 = [
-        '', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
-        'douze', 'treize', 'quatorze', 'quinze', 'seize'
-        ];
-
-    const DECADES = [
-        2 => 'vingt', 3 => 'trente', 4 => 'quarante', 5 => 'cinquante', 6 => 'soixante', 8 => 'quatre-vingt'
-    ];
-
-    /**
-     * @var FrenchCardinalNumber[]
-     */
-    private $cardinals;
+    const THOUSANDS = ['', 'mille', 'million', 'milliard'];
 
     /**
      * @var int
@@ -37,9 +26,14 @@ class FrenchIntegerHumanizer implements IHumanizer
     private $number;
 
     /**
-     * @var StringConcat
+     * @var Stringer
      */
     private $output;
+
+    /**
+     * @var int
+     */
+    private $nbThousands = 0;
 
     /**
      * FrenchIntegerHumanizer constructor.
@@ -49,12 +43,7 @@ class FrenchIntegerHumanizer implements IHumanizer
     public function __construct(int $number)
     {
         $this->number = $number;
-        $this->output = new StringConcat('');
-        $this->cardinals = [
-            new FrenchCardinalNumber('mille', 9, 4, false, true),
-            new FrenchCardinalNumber('million', 9, 7),
-            new FrenchCardinalNumber('milliard', 9, 10)
-        ];
+        $this->output = new Stringer('');
     }
 
     /**
@@ -66,113 +55,48 @@ class FrenchIntegerHumanizer implements IHumanizer
         if ($this->number === 0) {
             return 'zéro';
         }
-        if ($this->number < 0) {
-            $this->output->concat('moins')->addSpace();
+        $isNegative = $this->number < 0;
+        if ($isNegative) {
             $this->number = -$this->number;
         }
-        $this->humanizeUnsigned();
+        $this->humanizeBlocs();
+        if ($isNegative) {
+            $this->output->prefix('moins ');
+        }
         return trim($this->output);
     }
 
     /**
-     * Humanize unsigned integer to french string
-     * @return string
+     * Cut each 3 digits, humanize bloc and do it again until the bloc is not empty
      */
-    private function humanizeUnsigned()
+    private function humanizeBlocs()
     {
-        if ($this->number < 1000) {
-            $this->humanizeUnder1000();
-            return;
-        }
-        $this->humanizeFirstsDigit();
-    }
-
-    /**
-     * Humanize number between 0 and 100 (non inclusive)
-     * @return string
-     */
-    private function humanizeUnder100()
-    {
-        if ($this->number < 17) {
-            $this->output->concat(static::UNDER_17[$this->number]);
-            return;
-        }
-        if ($this->number < 20) {
-            $this->output->concat(static::UNDER_17[10])->addSeparator();
-            $this->number -= 10;
-        } else {
-            $decade = intdiv($this->number, 10);
-            $this->number = $this->number % 10;
-            if ($decade === 7 || $decade === 9) {
-                $this->number += 10;
-                $decade -= 1;
+        // Getting the first right bloc of 3 digits
+        $bloc = $this->number % 1000;
+        // The rest to humanize
+        $this->number = intdiv($this->number, 1000);
+        $step = $this->nbThousands > 0 ? (($this->nbThousands -1) % 3) + 1 : 0;
+        // If the bloc's value is 0 we don't have to write anything
+        if ($bloc > 0 || $step === 3) {
+            // Getting the step's bloc ("mille", "million", "milliard" ...)
+            $blocStep = new Stringer(static::THOUSANDS[$step]);
+            if ($bloc > 1 && $step > 1) {
+                // Pluralize the step if it's more than 1 and it's not mille
+                $blocStep->pluralize();
             }
-            $this->output->concat(static::DECADES[$decade]);
-            if ($decade < 8 && ($this->number === 1 || $this->number === 11)) {
-                $this->output->concat(' et ');
-            } elseif ($this->number > 0) {
-                $this->output->addSeparator();
-            } elseif ($decade === 8) {
-                // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
-                $this->output->pluralize();
+            $this->output
+                ->prefix(Stringer::SPACE)
+                ->prefix($blocStep);
+            if ($bloc > 1 || $step !== 1) {
+                $this->output
+                    ->prefix(Stringer::SPACE)
+                    ->prefix((new FrIntBlocHumanizer($bloc))->humanize());
             }
         }
-        $this->humanizeUnsigned();
-    }
-
-    /**
-     * Humanize number between 0 and 1000 (non inclusive)
-     */
-    private function humanizeUnder1000()
-    {
-        if ($this->number > 99) {
-            $hundreds = intdiv($this->number, 100);
-            $rest = $this->number % 100;
-            $this->number = $hundreds;
-            if ($hundreds > 1) {
-                $this->humanizeUnsigned();
-                $this->output->addSpace();
-            }
-            $this->output->concat('cent');
-            $this->number = $rest;
-            if ($this->number === 0 && $hundreds > 1) {
-                $this->output->pluralize();
-            }
-            if ($this->number > 0) {
-                $this->output->addSpace();
-            }
+        $this->nbThousands++;
+        // Do it again ...
+        if ($this->number > 0) {
+            $this->humanizeBlocs();
         }
-        $this->humanizeUnder100();
-    }
-
-    /**
-     * Getting special part (cent, mille, million, milliard) depending on number of digits
-     */
-    private function humanizeFirstsDigit()
-    {
-        $strNum = (string) $this->number;
-        $nbDigits = strlen($strNum);
-        $removed = 1;
-        if ($nbDigits > 2 && ($nbDigits - 2) % 3 === 0) {
-            $removed = 2;
-        } elseif ($nbDigits >= 6 && ($nbDigits - 6) % 3 === 0) {
-            $removed = 3;
-        } elseif ($nbDigits >= 13 && ($nbDigits - 13) % 3 === 0) {
-            $removed = 4;
-        }
-        $nbDigits = $nbDigits - $removed + 1;
-        $firstDigit = (int) substr($strNum, 0, $removed);
-        $this->number = (int) substr($strNum, $removed);
-        $humanized = (new FrenchIntegerHumanizer($firstDigit))->humanize();
-        if ($nbDigits > 2) {
-            foreach ($this->cardinals as $cardinal) {
-                if ($cardinal->isValid($nbDigits)) {
-                    $humanized = $cardinal->apply($firstDigit, $humanized);
-                    break;
-                }
-            }
-        }
-        $this->output->concat($humanized)->addSpace();
-        $this->humanizeUnsigned();
     }
 }

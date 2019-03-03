@@ -9,7 +9,7 @@
 namespace Humanizer\tools;
 
 
-class StringConcat
+class Stringer
 {
     const SPACE = ' ';
     const EMPTY = '';
@@ -33,7 +33,7 @@ class StringConcat
     /**
      * @param string $string
      * @param bool $ifEmpty
-     * @return $this|StringConcat
+     * @return $this|Stringer
      */
     public function concat(string $string, bool $ifEmpty = true): self
     {
@@ -44,8 +44,21 @@ class StringConcat
     }
 
     /**
+     * @param string $string
      * @param bool $ifEmpty
-     * @return StringConcat
+     * @return Stringer
+     */
+    public function prefix(string $string, bool $ifEmpty = true): self
+    {
+        if (!$ifEmpty || !empty($this)) {
+            $this->string = $string . $this;
+        }
+        return $this;
+    }
+
+    /**
+     * @param bool $ifEmpty
+     * @return Stringer
      */
     public function addSpace(bool $ifEmpty = true): self
     {
@@ -54,7 +67,7 @@ class StringConcat
 
     /**
      * @param bool $ifEmpty
-     * @return StringConcat
+     * @return Stringer
      */
     public function addSeparator(bool $ifEmpty = true): self
     {
@@ -64,7 +77,7 @@ class StringConcat
     /**
      * @param string $string
      * @param string $prefix
-     * @return StringConcat
+     * @return Stringer
      */
     public function concatWithPrefix(string $string, string $prefix = self::SPACE): self
     {
@@ -76,7 +89,7 @@ class StringConcat
 
     /**
      * @param bool $ifEmpty
-     * @return StringConcat
+     * @return Stringer
      */
     public function pluralize(bool $ifEmpty = true): self
     {
