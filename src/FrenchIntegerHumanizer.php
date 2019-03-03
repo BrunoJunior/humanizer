@@ -8,6 +8,9 @@
 
 namespace Humanizer;
 
+use Humanizer\tools\FrIntBlocHumanizer;
+use Humanizer\tools\Stringer;
+
 /**
  * Class FrenchIntegerHumanizer
  * Humanize integer to french
@@ -15,147 +18,84 @@ namespace Humanizer;
  */
 class FrenchIntegerHumanizer implements IHumanizer
 {
-    const UNDER_17 = [
-        '', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf', 'dix', 'onze',
-        'douze', 'treize', 'quatorze', 'quinze', 'seize'
-        ];
-
-    const DECADES = [
-        2 => 'vingt', 3 => 'trente', 4 => 'quarante', 5 => 'cinquante', 6 => 'soixante', 8 => 'quatre-vingt'
-    ];
+    const THOUSANDS = ['', 'mille', 'million', 'milliard'];
 
     /**
-     * @var FrenchCardinalNumber[]
+     * @var int
      */
-    private $cardinals;
+    private $number;
+
+    /**
+     * @var Stringer
+     */
+    private $output;
+
+    /**
+     * @var int
+     */
+    private $nbThousands = 0;
 
     /**
      * FrenchIntegerHumanizer constructor.
      * Init specialParts array
+     * @param int $number
      */
-    public function __construct()
+    public function __construct(int $number)
     {
-        $this->cardinals = [
-            new FrenchCardinalNumber('cent', 3, 0, false),
-            new FrenchCardinalNumber('mille', 9, 4, false, true),
-            new FrenchCardinalNumber('million', 9, 7),
-            new FrenchCardinalNumber('milliard', 9, 10)
-        ];
+        $this->number = $number;
+        $this->output = new Stringer('');
     }
 
     /**
      * Humanize integer to french string
-     * @param int $data
      * @return string
-     * @throws WrongTypeException
      */
-    public function humanize($data): string
+    public function humanize(): string
     {
-        if (!is_int($data)) {
-            throw new WrongTypeException("Data must be an integer!");
-        }
-        if ($data === 0) {
+        if ($this->number === 0) {
             return 'zéro';
         }
-        $start = '';
-        if ($data < 0) {
-            $start = 'moins ';
-            $data = -$data;
+        $isNegative = $this->number < 0;
+        if ($isNegative) {
+            $this->number = -$this->number;
         }
-        return $start . $this->humanizeUnsigned($data);
+        $this->humanizeBlocs();
+        if ($isNegative) {
+            $this->output->prefix('moins ');
+        }
+        return trim($this->output);
     }
 
     /**
-     * Humanize unsigned integer to french string
-     * @param int $number
-     * @return string
-     * @throws WrongTypeException
+     * Cut each 3 digits, humanize bloc and do it again until the bloc is not empty
      */
-    private function humanizeUnsigned(int $number): string
+    private function humanizeBlocs()
     {
-        if ($number < 100) {
-            return $this->humanizeUnder100($number);
-        }
-        $humanizedFirsts = $this->humanizeFirstsDigit($number, $removed);
-        $humanizedRest = $this->humanizeUnsigned((int) substr((string) $number, $removed));
-        $humanizedRuled = $this->applyPluralRules($humanizedFirsts, $humanizedRest);
-        return $humanizedRuled . ($humanizedRest ? ' ' : '') . $humanizedRest;
-    }
-
-    /**
-     * French grammar for plural rules
-     * @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/cent-ou-cents/
-     * @param string $start
-     * @param string $end
-     * @return string
-     */
-    private function applyPluralRules(string $start, string $end): string
-    {
-        if (substr($start, -5) === 'cents' && substr($end, 0, 4) !== 'mill' && !empty($end)) {
-            return substr($start, 0, -1);
-        }
-        return $start;
-    }
-
-    /**
-     * Humanize number between 0 and 100 (non inclusive)
-     * @param int $number
-     * @return string
-     * @throws WrongTypeException
-     */
-    private function humanizeUnder100(int $number): string
-    {
-        if ($number < 17) {
-            return static::UNDER_17[$number];
-        }
-        if ($number < 20) {
-            return 'dix-' . $this->humanizeUnsigned($number - 10);
-        }
-        $decade = intdiv($number, 10);
-        $unity = $number % 10;
-        if ($decade === 7 || $decade === 9) {
-            $unity += 10;
-            $decade -= 1;
-        }
-        $humanized = static::DECADES[$decade];
-        if ($decade < 8 && ($unity === 1 || $unity === 11)) {
-            $humanized .= ' et ';
-        } elseif ($unity > 0) {
-            $humanized .= '-';
-        } elseif ($decade === 8) {
-            // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
-            $humanized .= 's';
-        }
-        return $humanized . $this->humanizeUnsigned($unity);
-    }
-
-    /**
-     * Getting special part (cent, mille, million, milliard) depending on number of digits
-     * @param int $number
-     * @param int $removed
-     * @return string
-     * @throws WrongTypeException
-     */
-    private function humanizeFirstsDigit(int $number, &$removed): string
-    {
-        $strNum = (string) $number;
-        $nbDigits = strlen($strNum);
-        $removed = 1;
-        if ($nbDigits > 2 && ($nbDigits - 2) % 3 === 0) {
-            $removed = 2;
-        } elseif ($nbDigits >= 6 && ($nbDigits - 6) % 3 === 0) {
-            $removed = 3;
-        } elseif ($nbDigits >= 13 && ($nbDigits - 13) % 3 === 0) {
-            $removed = 4;
-        }
-        $nbDigits = $nbDigits - $removed + 1;
-        $firstDigit = (int) substr($strNum, 0, $removed);
-        $humanized = $this->humanizeUnsigned($firstDigit);
-        if ($nbDigits > 2) {
-            foreach ($this->cardinals as $cardinal) {
-                $humanized = $cardinal->apply($nbDigits, $firstDigit, $humanized);
+        // Getting the first right bloc of 3 digits
+        $bloc = $this->number % 1000;
+        // The rest to humanize
+        $this->number = intdiv($this->number, 1000);
+        // If the bloc's value is 0 we don't have to write anything
+        $step = $this->nbThousands > 0 ? (($this->nbThousands -1) % 3) + 1 : 0;
+        // The "milliard" bloc is printed even if it's equal to 0
+        if ($bloc > 0 || $step === 3) {
+            // Getting the step's bloc ("mille", "million", "milliard" ...)
+            $blocStep = new Stringer(static::THOUSANDS[$step]);
+            if (($bloc > 1 && $step > 1) || ($step === 3 && $bloc !== 1)) {
+                // Pluralize the step if it's more than 1 and it's not mille
+                $blocStep->pluralize();
+            } elseif ($bloc === 1 && $step === 1) {
+                $bloc = 0;
             }
+            $humanizedBloc = (new Stringer((new FrIntBlocHumanizer($bloc))->humanize()))
+                ->concatWithPrefix($blocStep, $bloc === 0 ? Stringer::EMPTY : Stringer::SPACE)
+                ->addSpace();
+            $this->output->prefix($humanizedBloc);
         }
-        return $humanized;
+        $this->nbThousands++;
+        // Do it again ...
+        if ($this->number > 0) {
+            $this->humanizeBlocs();
+        }
     }
 }
