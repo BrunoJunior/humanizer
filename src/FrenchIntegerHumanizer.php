@@ -87,7 +87,7 @@ class FrenchIntegerHumanizer implements IHumanizer
             } elseif ($bloc === 1 && $step === 1) {
                 $bloc = 0;
             }
-            $humanizedBloc = (new Stringer((new FrIntBlocHumanizer($bloc))->humanize()))
+            $humanizedBloc = Stringer::getInstance((new FrIntBlocHumanizer($bloc))->humanize())
                 ->appendWithPrefix($blocStep, $bloc === 0 ? Stringer::EMPTY : Stringer::SPACE)
                 ->appendSpace();
             $this->output->prepend($humanizedBloc);
