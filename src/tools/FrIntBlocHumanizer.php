@@ -10,6 +10,12 @@ namespace Humanizer\tools;
 
 use Humanizer\IHumanizer;
 
+/**
+ * Class FrIntBlocHumanizer
+ * Humanize in french a positive integer which is under 1000
+ * A bloc is composed with 3 digits max
+ * @package Humanizer\tools
+ */
 class FrIntBlocHumanizer implements IHumanizer
 {
     const UNDER_17 = [
@@ -43,6 +49,10 @@ class FrIntBlocHumanizer implements IHumanizer
         $this->output = new Stringer('');
     }
 
+    /**
+     * French humanization
+     * @return string
+     */
     public function humanize(): string
     {
         $this->humanizeUnder1000();
@@ -51,15 +61,17 @@ class FrIntBlocHumanizer implements IHumanizer
 
     /**
      * Humanize number between 0 and 100 (non inclusive)
-     * @return string
      */
     private function humanizeUnder100()
     {
+        // Under 17, a french number can't be calculated, its just constant ...
         if ($this->number < 17) {
             $this->output->concat(static::UNDER_17[$this->number]);
             return;
         }
         if ($this->number < 20) {
+            // For 17, 18 and 19, we can calculate the french number in this way :
+            // Concatenate "dix-" and the constant for the number - 10
             $this->output->concat(static::UNDER_17[10])->addSeparator();
             $this->number -= 10;
         } else {
