@@ -16,7 +16,8 @@
     "psr-4": { "Humanizer\\Tests\\": "tests/" }
   },
   "require": {
-    "php": "^7.0"
+    "php": "^7.0",
+    "bdesprez/stringer": "^1.0"
   },
   "require-dev": {
     "atoum/atoum": "3.3.0",

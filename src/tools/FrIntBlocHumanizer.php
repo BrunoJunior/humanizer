@@ -9,6 +9,7 @@
 namespace Humanizer\tools;
 
 use Humanizer\IHumanizer;
+use Stringer\Stringer;
 
 /**
  * Class FrIntBlocHumanizer
@@ -66,13 +67,13 @@ class FrIntBlocHumanizer implements IHumanizer
     {
         // Under 17, a french number can't be calculated, its just constant ...
         if ($this->number < 17) {
-            $this->output->concat(static::UNDER_17[$this->number]);
+            $this->output->append(static::UNDER_17[$this->number]);
             return;
         }
         if ($this->number < 20) {
             // For 17, 18 and 19, we can calculate the french number in this way :
             // Concatenate "dix-" and the constant for the number - 10
-            $this->output->concat(static::UNDER_17[10])->addSeparator();
+            $this->output->append(static::UNDER_17[10])->appendSeparator();
             $this->number -= 10;
         } else {
             $decade = intdiv($this->number, 10);
@@ -81,11 +82,11 @@ class FrIntBlocHumanizer implements IHumanizer
                 $this->number += 10;
                 $decade -= 1;
             }
-            $this->output->concat(static::DECADES[$decade]);
+            $this->output->append(static::DECADES[$decade]);
             if ($decade < 8 && ($this->number === 1 || $this->number === 11)) {
-                $this->output->concat(' et ');
+                $this->output->append(' et ');
             } elseif ($this->number > 0) {
-                $this->output->addSeparator();
+                $this->output->appendSeparator();
             } elseif ($decade === 8) {
                 // @see French grammar rule : https://www.projet-voltaire.fr/regles-orthographe/ving-ou-vingts/
                 $this->output->pluralize();
@@ -105,15 +106,15 @@ class FrIntBlocHumanizer implements IHumanizer
             $this->number = $hundreds;
             if ($hundreds > 1) {
                 $this->humanizeUnder100();
-                $this->output->addSpace();
+                $this->output->appendSpace();
             }
-            $this->output->concat('cent');
+            $this->output->append('cent');
             $this->number = $rest;
             if ($this->number === 0 && $hundreds > 1) {
                 $this->output->pluralize();
             }
             if ($this->number > 0) {
-                $this->output->addSpace();
+                $this->output->appendSpace();
             }
         }
         $this->humanizeUnder100();
